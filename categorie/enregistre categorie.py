@@ -35,6 +35,7 @@ import pandas as pd
 # En cas d'encodage du fichier texte en "ANSI", c'est à dire en latin1, on informe pandas qu'on utilise l'encodage des caractères en "latin1" pour lire le contenu
 
 # En cas d'encodage du fichier texte en "UTF-8", on informe pandas qu'on utilise l'encodage des caractères en utf-8 pour lire le contenu
+# df = pd.read_csv("Fichier satellite final nettoye_complet.csv",sep=";",encoding="latin1")
 df = pd.read_csv("Fichier satellite final nettoye_complet.csv",sep=";",encoding="latin1")
 
 
@@ -77,12 +78,9 @@ for numero,ligne in df.iterrows():
 
     chaine_liste_categories = ",".join(listecategories)
 
-    df.loc[numero,"categorie"] = chaine_liste_categories
 
-    # Remplacer [1,1] = [1, 10]
-    cat = ligne['categorie'].split(",")
-    if cat == ["1","1"]:
-        cat = ["1", "10"]
-
+    # df.loc[numero,"categorie"] = chaine_liste_categories
+    # Ce code est pour éviter que l'Excel tranforme le format de la chaine_liste_categories => éviter de transformer [1,10] à [1,1]
+    df.loc[numero, "categorie"] = f'="{chaine_liste_categories}"'
 
 df.to_csv("Satellite_avec_colonne_categorielle_liste.csv",sep=";",index=False, encoding="latin1")
