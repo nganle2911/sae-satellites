@@ -76,3 +76,83 @@ for numero, ligne in df_cat_plusgros.iterrows():
 
 # Sauvegarder dans un autre fichier avec des 3 champs
 df_cat_plusgros.to_csv("./analyse-par-categorie/df_cat_plusgros.csv", sep=";", encoding="latin1", index=False)
+
+
+## Analyser 7 catégories principales avec 56 sous-catégories
+
+# Créer un dictionnaire pour grouper 56 sous-catégories avec 7 principales catégories
+dico_cat = {
+    'Tracking and Data Relay Satellite System': 'Communication',
+    'Russian LEO Navigation': 'Communication',
+    'Parus': 'Communication',
+    'Qianfan': 'Communication',
+    'OneWeb': 'Communication',
+    'Tsiklon': 'Communication',
+    'Gonets': 'Communication',
+    'Gorizont': 'Communication',
+    'Intelsat': 'Communication',
+    'Iridium': 'Communication',
+    'O3B Networks': 'Communication',
+    'Orbcomm': 'Communication',
+    'Raduga': 'Communication',
+    'Starlink': 'Communication',
+    'Amateur radio': 'Communication',
+    'Beidou Navigation System': 'GPS',
+    'IRNSS': 'GPS',
+    'Galileo': 'GPS',
+    'Navy Navigation Satellite System': 'GPS',
+    'Glonass Operational': 'GPS',
+    'CubeSats': 'Observation',
+    'Disaster monitoring': 'Observation',
+    'Earth resources': 'Observation',
+    'Flock': 'Observation',
+    'Lemur': 'Observation',
+    'Space & Earth Science': 'Observation',
+    'Molniya': 'Militaire',
+    'Strela': 'Militaire',
+    'Tselina': 'Militaire',
+    'Westford Needles': 'Militaire',
+    'NOAA': 'Meteo',
+    'TV': 'TV',
+    'Geostationary': 'Geostationnaire'
+}
+
+nblignes_dfcat = len(df_cat_plusgros.axes[0])
+
+# Ajouter une colonne vide "categorie_principale"
+# Créer d'abord des lignes vides
+liste_vide_cat = []
+for i in range(nblignes_dfcat):
+    liste_vide_cat.append('')
+
+df_cat_plusgros = df_cat_plusgros.assign(categorie_principale = liste_vide_cat)
+
+# Ajouter des "catégorie principale" pour la nouvelle colonne créée
+df_cat_plusgros['categorie_principale'] = df_cat_plusgros['nom_categorie'].map(dico_cat)
+df_cat_plusgros['categorie_principale'].fillna('Autres', inplace=True)
+
+# Sauvegarder dans un autre fichier
+df_cat_plusgros.to_csv("./analyse-par-categorie/df_cat_principale.csv", sep=";", encoding="latin1", index=False)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
