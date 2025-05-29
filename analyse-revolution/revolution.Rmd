@@ -1,0 +1,177 @@
+---
+title: "analyse-par-révolution"
+author: "Kim"
+date: "2025-05-28"
+output: word_document
+---
+
+```{r,echo=FALSE,warning=FALSE,message=FALSE}
+suppressPackageStartupMessages(library(knitr))
+suppressPackageStartupMessages(library(dplyr))
+suppressPackageStartupMessages(library(ggplot2)) 
+```
+
+# Etude statistique univariée quantitative 
+## Présentation des données 
+### Données brutes - photo excel 
+
+### Données brutes avec des nombres de révolution
+```{r,echo=FALSE,warning=FALSE,message=FALSE}
+df <- read.csv("/Users/nganle2911/Documents/2425_FRANCE/SCIENCES-DES-DONNEES/IUT-Perpignan-Carcassonne/BUT1_2425/Semestre_2/SAE/Project-statistique-astrophysique_R2-06/sae-satellites-git/analyse-revolution/df.csv", sep = ";", encoding = "latin1")
+
+kable(head(df, 10))
+```
+
+### Données groupées avec effectif et fréquences 
+```{r,echo=FALSE,warning=FALSE,message=FALSE}
+nb_satellites <- nrow(df)
+
+df_groupe <- df %>% 
+  group_by(nom_categorie) %>%
+  summarise(
+    nombre_satellites = n(),
+    frequence = round(((n() / nb_satellites) * 100), 2) 
+  ) %>%
+  arrange(desc(nombre_satellites))
+
+# Ligne totale pour la table
+lig_totale <- df_groupe %>% 
+  summarise(
+    nom_categorie = "TOTAL",
+    nombre_satellites = sum(nombre_satellites),
+    frequence = sum(frequence)
+  )
+
+# Fusionner 2 tables
+df_groupe_total <- bind_rows(df_groupe, lig_totale)
+
+kable(df_groupe_total)
+```
+
+## Résumé statistique
+```{r,echo=FALSE,warning=FALSE,message=FALSE}
+cat_resume <- summary(df_groupe_total$nombre_satellites)
+
+# Afficher un tableau statistique
+cat_table <- c()
+for (i in 1:length(cat_resume)) {
+  cat_table <- c(cat_table, round(cat_resume[i], 2))
+}
+
+kable(cat_table)
+```
+
+## Visualisation avec 56 sous-catégories 
+```{r,echo=FALSE,warning=FALSE,message=FALSE}
+hist_cat <- ggplot(data = head(df_groupe, 10), aes(x = reorder(nom_categorie, -frequence), 
+                                               y = frequence)) + 
+  geom_bar(stat = "identity", fill = "#3C8DAD", colour = "#125D98") + 
+  geom_text(aes(label = paste0(round(frequence, 1), "%")), 
+            vjust = -0.5, size = 3.5, color = "black") +
+  labs(title = "Répartition en pourcentage des satellites par top 10 des catégories", 
+       x = "Catégorie", y = "Fréquence (%)") + 
+  theme(axis.text.x = element_text(angle = 50, hjust = 1),
+        plot.title = element_text(face ="bold", size = 12, hjust = 0.5))
+hist_cat
+
+# Sauvegarder en png
+ggsave("hist_cat.png", plot = hist_cat, dpi = 300, width = 6, height = 6)
+```
+
+# Etude statistique univariée avec 7 grandes catégories 
+### Données brutes avec catégories divisées
+```{r,echo=FALSE,warning=FALSE,message=FALSE}
+df_cat_principale <- read.csv("/Users/nganle2911/Documents/2425_FRANCE/SCIENCES-DES-DONNEES/IUT-Perpignan-Carcassonne/BUT1_2425/Semestre_2/SAE/Project-statistique-astrophysique_R2-06/analyse-par-categorie/df_cat_principale.csv", sep = ";", encoding = "latin1")
+
+df_cat_principale <- df_cat_principale[, c("Name", "nom_categorie", "categorie_principale")]
+kable(head(df_cat_principale, 10))
+```
+
+### Données groupées des 7 catégories principales avec effectif et fréquences 
+```{r,echo=FALSE,warning=FALSE,message=FALSE}
+nb_satellites <- nrow(df_cat_principale)
+
+df_groupe_catprincipale <- df_cat_principale %>% 
+  group_by(categorie_principale) %>%
+  summarise(
+    nombre_satellites = n(),
+    frequence = round(((n() / nb_satellites) * 100), 2) 
+  ) %>%
+  arrange(desc(nombre_satellites))
+
+# Ligne totale pour la table
+lig_catprincipale_totale <- df_groupe_catprincipale %>% 
+  summarise(
+    categorie_principale = "TOTAL",
+    nombre_satellites = sum(nombre_satellites),
+    frequence = sum(frequence)
+  )
+
+# Fusionner 2 tables
+df_groupe_catprincipale_total <- bind_rows(df_groupe_catprincipale, lig_catprincipale_totale)
+
+kable(df_groupe_catprincipale_total)
+```
+
+## Résumé statistique avec 7 catégories principales 
+```{r,echo=FALSE,warning=FALSE,message=FALSE}
+catprincipale_resume <- summary(df_groupe_catprincipale_total$nombre_satellites)
+
+# Afficher un tableau statistique
+catprincipale_table <- c()
+for (i in 1:length(catprincipale_resume)) {
+  catprincipale_table <- c(catprincipale_table, round(catprincipale_resume[i], 2))
+}
+
+kable(catprincipale_table)
+```
+
+## Visualisation avec 7 catégories principales - diagramme en barres 
+```{r,echo=FALSE,warning=FALSE,message=FALSE}
+# Diagramme en barres 
+hist_catprincipale <- ggplot(data = df_groupe_catprincipale, aes(x = reorder(categorie_principale, -frequence), 
+                                               y = frequence)) + 
+  geom_bar(stat = "identity", fill = "#3C8DAD", colour = "#125D98") + 
+  geom_text(aes(label = paste0(round(frequence, 1), "%")), 
+            vjust = -0.5, size = 3.5, color = "black") +
+  labs(title = "Répartition en pourcentage des satellites par 7 principales catégories", 
+       x = "Catégorie", y = "Fréquence (%)") + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        plot.title = element_text(face ="bold", size = 12, hjust = 0.5))
+hist_catprincipale
+
+# Sauvegarder en png
+ggsave("hist_catprincipale.png", plot = hist_catprincipale, dpi = 300, width = 6, height = 6)
+```
+
+## Visualisation avec 7 catégories principales - camembert
+```{r,echo=FALSE,warning=FALSE,message=FALSE}
+# Camembert
+# Assure-toi que ta variable 'categorie_principale' est un facteur ordonné
+df_groupe_catprincipale <- df_groupe_catprincipale %>%
+  mutate(categorie_principale = factor(categorie_principale, levels = categorie_principale[order(-frequence)]))
+
+# Créer le camembert
+pie_catprincipale <- ggplot(df_groupe_catprincipale, aes(x = "", y = frequence, fill = categorie_principale)) +
+  geom_bar(stat = "identity", width = 1, color = "white") +
+  coord_polar(theta = "y") +  # Transformation en camembert
+  geom_text(aes(label = paste0(round(frequence, 1), "%")),
+            position = position_stack(vjust = 0.5), size = 3, color = "black") +
+  labs(title = "Répartition en pourcentage des satellites par 7 principales catégories",
+       fill = "Catégories principales") +
+  theme_void() +  # Supprime les axes, grilles, etc.
+  theme(plot.title = element_text(face = "bold", size = 12, hjust = 0.9),
+        plot.background = element_rect(fill = "white", color = NA),
+        legend.position = "left")
+
+pie_catprincipale
+
+# Sauvegarder en png
+ggsave("pie_catprincipale.png", plot = pie_catprincipale, dpi = 300, width = 6, height = 4)
+
+```
+
+
+
+
+
