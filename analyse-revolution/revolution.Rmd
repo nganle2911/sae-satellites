@@ -31,7 +31,8 @@ df <- read.csv("/Users/nganle2911/Documents/2425_FRANCE/SCIENCES-DES-DONNEES/IUT
 kable(head(df, 10))
 ```
 
-### Données groupées par le nombre de révolution 
+### Données groupées par les 10 intervalles du nombre de révolutions  
+En effet, en raison du grand nombre de variations dans le nombre de révolutions, nous avons donc choisi de regrouper les données par intervalles, chaque intervalle couvrant une plage de 10 000 tours. 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
 nb_satellites <- nrow(df)
 
@@ -70,6 +71,24 @@ kable(df_groupee_revo_total)
 ```
 
 ### Résumé statistique
+Un tableau récapitulatif des caractéristiques numériques
+```{r,echo=FALSE,warning=FALSE,message=FALSE}
+resume_revo <- df %>%
+  summarise(
+    Minimum = min(Revolution_number, na.rm = TRUE),
+    Q1 = quantile(Revolution_number, 0.25, na.rm = TRUE),
+    Mediane = median(Revolution_number, na.rm = TRUE),
+    Moyenne = round(mean(Revolution_number, na.rm = TRUE), 2),
+    Q3 = quantile(Revolution_number, 0.75, na.rm = TRUE),
+    Maximum = max(Revolution_number, na.rm = TRUE),
+    Etendue = max(Revolution_number, na.rm = TRUE) - min(Revolution_number, na.rm = TRUE),
+    Ecart_type = round(sd(Revolution_number, na.rm = TRUE), 2)
+  )
+
+kable(resume_revo, caption = "Résumé statistique")
+```
+
+
 Vous trouverez ci-dessous un tableau récapitulatif des caractéristiques numériques pour les 10 intervalles du nombre de révolution.  
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
 resume_par_intervalle <- df %>%
@@ -87,8 +106,39 @@ resume_par_intervalle <- df %>%
 kable(resume_par_intervalle)
 ```
 
+
 ### Visualisation
+#### Histogramme 
+L'histogramme ci-dessous représente la distribution (en pourcentage) des satellites en fonction des 10 intervalles du nombre de révolutions.
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
+hist_revo <- ggplot(df_groupee_revo, aes(x = Intervalles, y = frequence)) + 
+  geom_bar(stat = "identity", fill = "#3C8DAD", colour = "#125D98") + 
+  geom_text(aes(label = paste0(round(frequence, 2), "%")), 
+            vjust = -0.5, size = 3.5, color = "black") + 
+  labs(title = "Histogramme (fréquences %) par intervalle du nombre de révolutions", 
+       x = "Intervalle du nombre de révolutions",
+       y = "Fréquence (%)") + 
+  theme(plot.title = element_text(face ="bold", size = 12, hjust = 0.3)) 
+
+hist_revo
+
+# Sauvegarder en png
+ggsave("hist_revo.png", plot = hist_revo, dpi = 300, width = 6, height = 4.5)
+```
+
+#### Boîte à moustaches globale
+```{r,echo=FALSE,warning=FALSE,message=FALSE}
+boxplot_revo <- ggplot(df, aes(x = "", y = Revolution_number)) +
+  geom_boxplot(fill = "#F5A962", color = "#125D98", notch = TRUE) +
+  coord_flip() +
+  labs(title = "Boîte à moustaches du nombre de révolutions",
+       y = "Nombre de révolutions",
+       x = "") +
+  theme(plot.title = element_text(face ="bold", size = 12, hjust = 0.3)) 
+
+boxplot_revo
+
+ggsave("boxplot_revo.png", plot = boxplot_revo, dpi = 300, width = 5, height = 2)
 
 ```
 
