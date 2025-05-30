@@ -13,165 +13,82 @@ suppressPackageStartupMessages(library(ggplot2))
 
 # Etude statistique univariée quantitative 
 ## Présentation des données 
-### Données brutes - photo excel 
+- Population Ω : Ensemble des satellites visibles au 13 mai 2025 et pour lesquels la variable Revolution_number est valide, c'est-à-dire strictement supérieure à 0 et non vide. 
+La taile de la population : Card(Ω) = n = 14 255 satellites
+- Unité statistique : Un satellite
+- Variable étudiée : Le nombre de révolution qui représente le nombre total de tours que le satellite a fait autour de la Terre depuis son lancement, de nature quantitative discrète. 
 
-### Données brutes avec des nombres de révolution
+Remarque générale : 
+Pour un satellites dont sa variable Revolution_number est égale 0 ou vide, il y a des situations possibles : 
+- Le satellite vient d'être lancé, il n'a pas encore accompli un tout complet autour de la Terre, ce qui explique une valeur de 0. 
+- Le satellite est ancien mais les données sont absentes, cela peut concerner certains satellites militaires ou géostationnaire à usage stratégique, dont les données orbitales (TLE) se sont cachées.
+
+### Données brutes avec le nombre de révolution
+Voici un extrait des données brutes 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
 df <- read.csv("/Users/nganle2911/Documents/2425_FRANCE/SCIENCES-DES-DONNEES/IUT-Perpignan-Carcassonne/BUT1_2425/Semestre_2/SAE/Project-statistique-astrophysique_R2-06/sae-satellites-git/analyse-revolution/df.csv", sep = ";", encoding = "latin1")
 
 kable(head(df, 10))
 ```
 
-### Données groupées avec effectif et fréquences 
+### Données groupées par le nombre de révolution 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
 nb_satellites <- nrow(df)
 
-df_groupe <- df %>% 
-  group_by(nom_categorie) %>%
-  summarise(
-    nombre_satellites = n(),
-    frequence = round(((n() / nb_satellites) * 100), 2) 
-  ) %>%
-  arrange(desc(nombre_satellites))
+# Création des intervalles pour le nombre de révolution 
+intervalle <- c(1, 10000, 20000, 30000, 40000, 50000, 60000, 70000, 80000, 90000, 100000)
+
+# Les étiquettes pour l'axe X 
+etiquettes <- c("0-10k", "10k-20k", "20k–30k", "30k–40k", "40k–50k", "50k–60k", "60k–70k", "70k–80k", "80k–90k", "90k–100k")
+
+# Création d'une colonne avec les intervalles
+df$Intervalles <- cut(df$Revolution_number,
+                      breaks = intervalle,
+                      labels = etiquettes,
+                      include.lowest = TRUE,
+                      right = FALSE)
+
+# Regrouper et compter les effectifs 
+df_groupee_revo <- df %>% 
+  group_by(Intervalles) %>%
+  summarise(nombre_satellite = n(),
+            frequence = round(((nombre_satellite / nb_satellites) * 100),2))
 
 # Ligne totale pour la table
-lig_totale <- df_groupe %>% 
+lig_totale_revo <- df_groupee_revo %>% 
   summarise(
-    nom_categorie = "TOTAL",
-    nombre_satellites = sum(nombre_satellites),
+    Intervalles = "TOTAL",
+    nombre_satellite = sum(nombre_satellite),
     frequence = sum(frequence)
   )
 
 # Fusionner 2 tables
-df_groupe_total <- bind_rows(df_groupe, lig_totale)
+df_groupee_revo_total <- bind_rows(df_groupee_revo, lig_totale_revo)
 
-kable(df_groupe_total)
+kable(df_groupee_revo_total)
+
 ```
 
-## Résumé statistique
+### Résumé statistique
+Vous trouverez ci-dessous un tableau récapitulatif des caractéristiques numériques pour les 10 intervalles du nombre de révolution.  
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
-cat_resume <- summary(df_groupe_total$nombre_satellites)
-
-# Afficher un tableau statistique
-cat_table <- c()
-for (i in 1:length(cat_resume)) {
-  cat_table <- c(cat_table, round(cat_resume[i], 2))
-}
-
-kable(cat_table)
-```
-
-## Visualisation avec 56 sous-catégories 
-```{r,echo=FALSE,warning=FALSE,message=FALSE}
-hist_cat <- ggplot(data = head(df_groupe, 10), aes(x = reorder(nom_categorie, -frequence), 
-                                               y = frequence)) + 
-  geom_bar(stat = "identity", fill = "#3C8DAD", colour = "#125D98") + 
-  geom_text(aes(label = paste0(round(frequence, 1), "%")), 
-            vjust = -0.5, size = 3.5, color = "black") +
-  labs(title = "Répartition en pourcentage des satellites par top 10 des catégories", 
-       x = "Catégorie", y = "Fréquence (%)") + 
-  theme(axis.text.x = element_text(angle = 50, hjust = 1),
-        plot.title = element_text(face ="bold", size = 12, hjust = 0.5))
-hist_cat
-
-# Sauvegarder en png
-ggsave("hist_cat.png", plot = hist_cat, dpi = 300, width = 6, height = 6)
-```
-
-# Etude statistique univariée avec 7 grandes catégories 
-### Données brutes avec catégories divisées
-```{r,echo=FALSE,warning=FALSE,message=FALSE}
-df_cat_principale <- read.csv("/Users/nganle2911/Documents/2425_FRANCE/SCIENCES-DES-DONNEES/IUT-Perpignan-Carcassonne/BUT1_2425/Semestre_2/SAE/Project-statistique-astrophysique_R2-06/analyse-par-categorie/df_cat_principale.csv", sep = ";", encoding = "latin1")
-
-df_cat_principale <- df_cat_principale[, c("Name", "nom_categorie", "categorie_principale")]
-kable(head(df_cat_principale, 10))
-```
-
-### Données groupées des 7 catégories principales avec effectif et fréquences 
-```{r,echo=FALSE,warning=FALSE,message=FALSE}
-nb_satellites <- nrow(df_cat_principale)
-
-df_groupe_catprincipale <- df_cat_principale %>% 
-  group_by(categorie_principale) %>%
+resume_par_intervalle <- df %>%
+  group_by(Intervalles) %>%
   summarise(
-    nombre_satellites = n(),
-    frequence = round(((n() / nb_satellites) * 100), 2) 
-  ) %>%
-  arrange(desc(nombre_satellites))
-
-# Ligne totale pour la table
-lig_catprincipale_totale <- df_groupe_catprincipale %>% 
-  summarise(
-    categorie_principale = "TOTAL",
-    nombre_satellites = sum(nombre_satellites),
-    frequence = sum(frequence)
+    Min = min(Revolution_number, na.rm = TRUE),
+    Q1 = quantile(Revolution_number, 0.25, na.rm = TRUE),
+    Mediane = median(Revolution_number, na.rm = TRUE),
+    Q3 = quantile(Revolution_number, 0.75, na.rm = TRUE),
+    Max = max(Revolution_number, na.rm = TRUE),
+    Moyenne = round(mean(Revolution_number, na.rm = TRUE), 2),
+    Ecarttype = round(sd(Revolution_number, na.rm = TRUE),2)
   )
 
-# Fusionner 2 tables
-df_groupe_catprincipale_total <- bind_rows(df_groupe_catprincipale, lig_catprincipale_totale)
-
-kable(df_groupe_catprincipale_total)
+kable(resume_par_intervalle)
 ```
 
-## Résumé statistique avec 7 catégories principales 
+### Visualisation
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
-catprincipale_resume <- summary(df_groupe_catprincipale_total$nombre_satellites)
-
-# Afficher un tableau statistique
-catprincipale_table <- c()
-for (i in 1:length(catprincipale_resume)) {
-  catprincipale_table <- c(catprincipale_table, round(catprincipale_resume[i], 2))
-}
-
-kable(catprincipale_table)
-```
-
-## Visualisation avec 7 catégories principales - diagramme en barres 
-```{r,echo=FALSE,warning=FALSE,message=FALSE}
-# Diagramme en barres 
-hist_catprincipale <- ggplot(data = df_groupe_catprincipale, aes(x = reorder(categorie_principale, -frequence), 
-                                               y = frequence)) + 
-  geom_bar(stat = "identity", fill = "#3C8DAD", colour = "#125D98") + 
-  geom_text(aes(label = paste0(round(frequence, 1), "%")), 
-            vjust = -0.5, size = 3.5, color = "black") +
-  labs(title = "Répartition en pourcentage des satellites par 7 principales catégories", 
-       x = "Catégorie", y = "Fréquence (%)") + 
-  theme(axis.text.x = element_text(angle = 45, hjust = 1),
-        plot.title = element_text(face ="bold", size = 12, hjust = 0.5))
-hist_catprincipale
-
-# Sauvegarder en png
-ggsave("hist_catprincipale.png", plot = hist_catprincipale, dpi = 300, width = 6, height = 6)
-```
-
-## Visualisation avec 7 catégories principales - camembert
-```{r,echo=FALSE,warning=FALSE,message=FALSE}
-# Camembert
-# Assure-toi que ta variable 'categorie_principale' est un facteur ordonné
-df_groupe_catprincipale <- df_groupe_catprincipale %>%
-  mutate(categorie_principale = factor(categorie_principale, levels = categorie_principale[order(-frequence)]))
-
-# Créer le camembert
-pie_catprincipale <- ggplot(df_groupe_catprincipale, aes(x = "", y = frequence, fill = categorie_principale)) +
-  geom_bar(stat = "identity", width = 1, color = "white") +
-  coord_polar(theta = "y") +  # Transformation en camembert
-  geom_text(aes(label = paste0(round(frequence, 1), "%")),
-            position = position_stack(vjust = 0.5), size = 3, color = "black") +
-  labs(title = "Répartition en pourcentage des satellites par 7 principales catégories",
-       fill = "Catégories principales") +
-  theme_void() +  # Supprime les axes, grilles, etc.
-  theme(plot.title = element_text(face = "bold", size = 12, hjust = 0.9),
-        plot.background = element_rect(fill = "white", color = NA),
-        legend.position = "left")
-
-pie_catprincipale
-
-# Sauvegarder en png
-ggsave("pie_catprincipale.png", plot = pie_catprincipale, dpi = 300, width = 6, height = 4)
 
 ```
-
-
-
-
 

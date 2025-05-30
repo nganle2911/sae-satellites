@@ -15,7 +15,6 @@ champs_choisis = ["Name", "NORAD_number", "Revolution_number"]
 df = df[champs_choisis]
 
 ## POUR REVOLUTION_NUMBER - Enlever des lignes contenant la révolution_number = 0 ou vide
-
 df_nettoye = df[(df['Revolution_number'].notna()) & (df['Revolution_number'] != 0)]
 
 df_nettoye.to_csv("./sae-satellites-git/analyse-revolution/df.csv", sep=";", encoding="latin1", index=False)
